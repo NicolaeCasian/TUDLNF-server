@@ -7,7 +7,16 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+const corsOptions = {
+    origin: [
+      'http://localhost:8100',  // Local development (Ionic frontend)
+      'https://yourfrontend.herokuapp.com',  // Production URL of your frontend
+    ],
+    methods: 'GET,POST,PUT,DELETE',
+    allowedHeaders: 'Content-Type',
+  };
+  
+app.use(cors(corsOptions)); // CORS middleware with the specified options  
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // Route to handle report lost item (delegated to controller)
