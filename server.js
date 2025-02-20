@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 const corsOptions = {
     origin: [
       'http://localhost:8100',  // Local development (Ionic frontend)
-      'https://tudlnf-serverv2-90ee51882713.herokuapp.com/api/lost_items',  // Production URL of your frontend
+      'https://tudlnf-serverv2-90ee51882713.herokuapp.com',  // Production URL for frontend
     ],
     methods: 'GET,POST,PUT,DELETE',
     allowedHeaders: 'Content-Type',
