@@ -1,1 +1,1 @@
-Hosted with Heroku
+Node Express server hosted with Heroku
