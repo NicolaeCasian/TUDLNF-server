@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config({ path: './.env.local' });
 const lostItemsController = require('./controllers/lostItemsController');
+const foundItemsController = require('./controllers/foundItemsController');
 const path = require('path');
 
 const app = express();
@@ -24,7 +25,19 @@ app.post('/api/report_lost', lostItemsController.upload.single('image'), (req, r
     lostItemsController.addLostItem(req, res); // Call the controller to handle the logic
 });
 
+// Route to get all lost items (delegated to controller)
 app.get('/api/lost_items', lostItemsController.getLostItems);
+
+
+// Route to handle report found item (delegated to controller)
+app.post('/api/report_found', foundItemsController.upload.single('image'), (req, res) => {
+    foundItemsController.addFoundItem(req, res); // Call the controller to handle the logic
+});
+
+// Route to get all found items (delegated to controller)
+app.get('/api/found_items', foundItemsController.getFoundItems);
+
+
 
 // Start the server
 app.listen(PORT, () => {
