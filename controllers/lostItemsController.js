@@ -32,11 +32,11 @@ const upload = multer({
 
 // Add lost item
 const addLostItem = async (req, res) => {
-    const {name, category, description, location, dateLost, email} = req.body;
+    const {type,name, category, description, location, dateLost, email} = req.body;
     const image = req.file ? req.file.key : null;
 
     const lostItem = {
-        type,
+        type:'Lost',
         name,
         category,
         description,
