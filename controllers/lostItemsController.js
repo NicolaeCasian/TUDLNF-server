@@ -36,6 +36,7 @@ const addLostItem = async (req, res) => {
     const image = req.file ? req.file.key : null;
 
     const lostItem = {
+        type,
         name,
         category,
         description,
@@ -57,6 +58,7 @@ const addLostItem = async (req, res) => {
             success: true,
             message: 'Data uploaded and stored successfully!',
             receivedData: {
+                type,
                 name,
                 category,
                 description,
