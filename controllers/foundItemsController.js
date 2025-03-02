@@ -1,10 +1,10 @@
 const path = require('path');
 const multer = require('multer');
-const {connectDB} = require("../lib/mongodb");
+const { connectDB } = require("../lib/mongodb");
 const multerS3 = require("multer-s3");
-const {S3Client, GetObjectCommand} = require("@aws-sdk/client-s3");
-const  dotenv = require("dotenv");
-const {getSignedUrl} = require("@aws-sdk/s3-request-presigner")
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const dotenv = require("dotenv");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 dotenv.config();
 
@@ -14,34 +14,35 @@ const s3 = new S3Client({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     },
-})
+});
 
 const upload = multer({
     storage: multerS3({
         s3: s3,
         bucket: process.env.S3_BUCKET_NAME,
-        key: (req,file,cb) => {
+        key: (req, file, cb) => {
             const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
             const fileName = `uploads/${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`;
-            cb(null,fileName);
+            cb(null, fileName);
         },
         contentType: multerS3.AUTO_CONTENT_TYPE,
     }),
-    limits: {fileSize: 5*1024*1024},
-})
+    limits: { fileSize: 5 * 1024 * 1024 },
+});
 
-// Add lost item
+// Add found item
 const addFoundItem = async (req, res) => {
-    const {type,name, category, description, location, dateLost, email} = req.body;
+    // Extract dateFound rather than dateLost for a found item
+    const { type, name, category, description, location, dateFound, email } = req.body;
     const image = req.file ? req.file.key : null;
 
     const foundItem = {
-        type:'Found',
+        type: 'Found', // or you could use the value from req.body if needed
         name,
         category,
         description,
         location,
-        dateLost,
+        dateFound,
         email,
         image,
         createdAt: new Date(),
@@ -63,10 +64,10 @@ const addFoundItem = async (req, res) => {
                 category,
                 description,
                 location,
-                dateLost,
+                dateFound,
                 email,
             },
-            image: image || "No Image"
+            image: image || "No Image",
         });
     } catch (error) {
         console.error('Error inserting document into MongoDB:', error);
@@ -77,7 +78,8 @@ const addFoundItem = async (req, res) => {
     }
 };
 
-const getLostItems = async (req, res) => {
+// Get found items
+const getFoundItems = async (req, res) => {
     try {
         const db = await connectDB();
         const collection = db.collection("found_items");
@@ -89,7 +91,7 @@ const getLostItems = async (req, res) => {
                     Bucket: process.env.S3_BUCKET_NAME,
                     Key: item.image,
                 });
-                item.image = await getSignedUrl(s3, command, {expiresIn: 3600})
+                item.image = await getSignedUrl(s3, command, { expiresIn: 3600 });
             }
         }
 
@@ -100,16 +102,16 @@ const getLostItems = async (req, res) => {
             items,
         });
     } catch (err) {
-        console.error("Error fetching found items:",err)
+        console.error("Error fetching found items:", err);
         res.status(500).json({
-            success:false,
+            success: false,
             message: "Error fetching found items",
         });
     }
 };
 
 module.exports = {
-    addLostItem,
+    addFoundItem,  // Corrected export: now exporting addFoundItem
     upload,
-    getLostItems
+    getFoundItems, // Renamed for clarity
 };
