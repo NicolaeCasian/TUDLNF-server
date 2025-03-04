@@ -3,10 +3,11 @@ const multer = require('multer');
 const {connectDB} = require("../lib/mongodb");
 const multerS3 = require("multer-s3");
 const {S3Client, GetObjectCommand} = require("@aws-sdk/client-s3");
-const  dotenv = require("dotenv");
+const dotenv = require("dotenv");
 const {getSignedUrl} = require("@aws-sdk/s3-request-presigner")
+const { ObjectId } = require('mongodb');
 
-dotenv.config();
+dotenv.config({ path: './env.local' });
 
 const s3 = new S3Client({
     region: process.env.AWS_REGION,
@@ -20,14 +21,14 @@ const upload = multer({
     storage: multerS3({
         s3: s3,
         bucket: process.env.S3_BUCKET_NAME,
-        key: (req,file,cb) => {
+        key: (req, file, cb) => {
             const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
             const fileName = `uploads/${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`;
-            cb(null,fileName);
+            cb(null, fileName);
         },
         contentType: multerS3.AUTO_CONTENT_TYPE,
     }),
-    limits: {fileSize: 5*1024*1024},
+    limits: {fileSize: 5 * 1024 * 1024},
 })
 
 // Add lost item
@@ -77,6 +78,47 @@ const addLostItem = async (req, res) => {
     }
 };
 
+const getLostItemById = async (req, res) => {
+    try {
+        const {id} = req.params;
+        const db = await connectDB();
+        const collection = db.collection("lost_items");
+
+        // Fetch the item by ID
+        const item = await collection.findOne({_id: new ObjectId(id)});
+
+        if (!item) {
+            return res.status(404).json({
+                success: false,
+                message: 'Item not found',
+            });
+        }
+
+        // If the item has an image, generate a signed URL for it
+        if (item.image) {
+            const command = new GetObjectCommand({
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: item.image,
+            });
+            item.image = await getSignedUrl(s3, command, {expiresIn: 3600});
+        }
+
+        console.log("Fetched lost item:", item);
+
+        res.json({
+            success: true,
+            item,  // Send the single item back in the response
+        });
+    } catch (err) {
+        console.error("Error fetching lost item:", err);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching lost item',
+        });
+    }
+};
+
+
 const getLostItems = async (req, res) => {
     try {
         const db = await connectDB();
@@ -100,9 +142,9 @@ const getLostItems = async (req, res) => {
             items,
         });
     } catch (err) {
-        console.error("Error fetching lost items:",err)
+        console.error("Error fetching lost items:", err)
         res.status(500).json({
-            success:false,
+            success: false,
             message: "Error fetching lost items",
         });
     }
@@ -110,6 +152,7 @@ const getLostItems = async (req, res) => {
 
 module.exports = {
     addLostItem,
+    getLostItemById,
     upload,
     getLostItems
 };
