@@ -1,14 +1,19 @@
-const { connectDB } = require("../lib/mongodb");
+// controllers/userController.js
+const express = require('express');
+const router = express.Router();
+const { connectDB } = require('../lib/mongodb'); // Verify this path is correct
 
-const addOrUpdateUser = async (req, res) => {
-  const { email, name } = req.body;
-  if (!email || !name) {
-    return res.status(400).json({ success: false, message: "Email and name are required." });
-  }
+// POST /api/users
+// Create or update a user record upon login
+router.post('/', async (req, res) => {
   try {
+    const { email, name } = req.body;
+    if (!email || !name) {
+      return res.status(400).json({ success: false, message: "Email and name are required." });
+    }
     const db = await connectDB();
     const collection = db.collection("users");
-    
+
     // Check if the user already exists
     const existingUser = await collection.findOne({ email });
     if (existingUser) {
@@ -25,18 +30,20 @@ const addOrUpdateUser = async (req, res) => {
       return res.json({ success: true, user: newUser });
     }
   } catch (error) {
-    console.error("Error in addOrUpdateUser:", error);
+    console.error("Error in POST /api/users:", error);
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
-};
+});
 
-const updateUserAdditionalInfo = async (req, res) => {
-  const { email } = req.params;
-  const { phone, studentId } = req.body;
+// PUT /api/users/:email
+// Update additional user information (phone and studentId)
+router.put('/:email', async (req, res) => {
   try {
+    const { email } = req.params;
+    const { phone, studentId } = req.body;
     const db = await connectDB();
     const collection = db.collection("users");
-    
+
     const updateResult = await collection.updateOne(
       { email },
       { $set: { phone, studentId } }
@@ -48,9 +55,9 @@ const updateUserAdditionalInfo = async (req, res) => {
     console.log("User additional info updated:", updatedUser);
     return res.json({ success: true, user: updatedUser });
   } catch (error) {
-    console.error("Error in updateUserAdditionalInfo:", error);
+    console.error("Error in PUT /api/users/:email:", error);
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
-};
+});
 
-module.exports = { addOrUpdateUser, updateUserAdditionalInfo };
+module.exports = router;
