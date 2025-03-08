@@ -42,7 +42,7 @@ app.get('/api/found_items', foundItemsController.getFoundItems);
 
 app.get('/api/lost_items/:id', lostItemsController.getLostItemById);
 
-app.use('/api/users', userController);
+
 
 // Start the server
 app.listen(PORT, () => {
