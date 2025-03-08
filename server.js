@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config({ path: './.env.local' });
 const lostItemsController = require('./controllers/lostItemsController');
 const foundItemsController = require('./controllers/foundItemsController');
+const userController = require('./controllers/userController');
 const path = require('path');
 
 const app = express();
@@ -40,6 +41,8 @@ app.get('/api/found_items', foundItemsController.getFoundItems);
 
 
 app.get('/api/lost_items/:id', lostItemsController.getLostItemById);
+
+app.use('/api/users', userController);
 
 // Start the server
 app.listen(PORT, () => {
