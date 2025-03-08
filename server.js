@@ -16,9 +16,10 @@ const corsOptions = {
     ],
     methods: 'GET,POST,PUT,DELETE',
     allowedHeaders: 'Content-Type',
-  };
-  
+};
+
 app.use(cors(corsOptions)); // CORS middleware with the specified options  
+app.use(express.json()); // Parse JSON request bodies
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // Route to handle report lost item (delegated to controller)
@@ -29,7 +30,6 @@ app.post('/api/report_lost', lostItemsController.upload.single('image'), (req, r
 // Route to get all lost items (delegated to controller)
 app.get('/api/lost_items', lostItemsController.getLostItems);
 
-
 // Route to handle report found item (delegated to controller)
 app.post('/api/report_found', foundItemsController.upload.single('image'), (req, res) => {
     foundItemsController.addFoundItem(req, res); // Call the controller to handle the logic
@@ -38,12 +38,11 @@ app.post('/api/report_found', foundItemsController.upload.single('image'), (req,
 // Route to get all found items (delegated to controller)
 app.get('/api/found_items', foundItemsController.getFoundItems);
 
-
-
 app.get('/api/lost_items/:id', lostItemsController.getLostItemById);
+
+// Mount user routes using userController
 app.use('/api/users', userController);
 
-// Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
