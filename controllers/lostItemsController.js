@@ -94,7 +94,6 @@ const getLostItemById = async (req, res) => {
             });
         }
 
-        // If the item has an image, generate a signed URL for it
         if (item.image) {
             const command = new GetObjectCommand({
                 Bucket: process.env.S3_BUCKET_NAME,
@@ -107,7 +106,7 @@ const getLostItemById = async (req, res) => {
 
         res.json({
             success: true,
-            item,  // Send the single item back in the response
+            item,
         });
     } catch (err) {
         console.error("Error fetching lost item:", err);

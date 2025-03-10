@@ -5,6 +5,7 @@ const multerS3 = require("multer-s3");
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 const dotenv = require("dotenv");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const {ObjectId} = require("mongodb");
 
 dotenv.config();
 
@@ -110,8 +111,47 @@ const getFoundItems = async (req, res) => {
     }
 };
 
+const getFoundItemById = async (req, res) => {
+    try {
+        const {id} = req.params;
+        const db = await connectDB();
+        const collection = db.collection("found_items");
+
+        const item = await collection.findOne({_id: new ObjectId(id)});
+
+        if (!item) {
+            return res.status(404).json({
+                success: false,
+                message: 'Item not found',
+            });
+        }
+
+        if (item.image) {
+            const command = new GetObjectCommand({
+                Bucket: process.env.S3_BUCKET_NAME,
+                Key: item.image,
+            });
+            item.image = await getSignedUrl(s3, command, {expiresIn: 3600});
+        }
+
+        console.log("Fetched found item:", item);
+
+        res.json({
+            success: true,
+            item,
+        });
+    } catch (err) {
+        console.error("Error fetching found item:", err);
+        res.status(500).json({
+            success: false,
+            message: 'Error fetching v item',
+        });
+    }
+};
+
 module.exports = {
     addFoundItem,  // Corrected export: now exporting addFoundItem
     upload,
+    getFoundItemById,
     getFoundItems, // Renamed for clarity
 };

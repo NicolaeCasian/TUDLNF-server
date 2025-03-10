@@ -30,6 +30,7 @@ app.post('/api/report_lost', lostItemsController.upload.single('image'), (req, r
 // Route to get all lost items (delegated to controller)
 app.get('/api/lost_items', lostItemsController.getLostItems);
 
+
 // Route to handle report found item (delegated to controller)
 app.post('/api/report_found', foundItemsController.upload.single('image'), (req, res) => {
     foundItemsController.addFoundItem(req, res); // Call the controller to handle the logic
@@ -38,11 +39,16 @@ app.post('/api/report_found', foundItemsController.upload.single('image'), (req,
 // Route to get all found items (delegated to controller)
 app.get('/api/found_items', foundItemsController.getFoundItems);
 
+
+
 app.get('/api/lost_items/:id', lostItemsController.getLostItemById);
+
+app.get('/api/found_items/:id', foundItemsController.getFoundItemById);
 
 // Mount user routes using userController
 app.use('/api/users', userController);
 
+// Start the server
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
