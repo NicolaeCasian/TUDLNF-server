@@ -45,6 +45,12 @@ app.get('/api/lost_items/:id', lostItemsController.getLostItemById);
 
 app.get('/api/found_items/:id', foundItemsController.getFoundItemById);
 
+//Delete lost item
+app.delete('/api/lost_items/:id', lostItemsController.deleteLostItem);
+
+//Delete found item
+app.delete('/api/found_items/:id', foundItemsController.deleteFoundItem);
+
 // Mount user routes using userController
 app.use('/api/users', userController);
 
