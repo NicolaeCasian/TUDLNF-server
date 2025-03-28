@@ -60,4 +60,19 @@ router.put('/:email', async (req, res) => {
   }
 });
 
+
+// GET /api/users - Retrieve all users
+router.get('/', async (req, res) => {
+  try {
+    const db = await connectDB();
+    const collection = db.collection("users");
+    const users = await collection.find({}).toArray();
+    return res.json(users);
+  } catch (error) {
+    console.error("Error in GET /api/users:", error);
+    return res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+
 module.exports = router;
