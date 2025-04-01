@@ -5,7 +5,7 @@ const { connectDB } = require('../lib/mongodb'); // Ensure this path is correct
 const router = express.Router();
 
 // GET /api/admin/users - Get all users
-async function getAllUsers(req, res) {
+router.get('/users', async (req, res) => {
   try {
     const db = await connectDB();
     const users = await db.collection("users").find().toArray();
@@ -14,18 +14,9 @@ async function getAllUsers(req, res) {
     console.error("Error fetching users:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
-}
+});
 
-module.exports = {
-  getAllUsers, // Add this to exports
-  updateUserRole,
-  deleteUser,
-  updateLostItem,
-  updateFoundItem,
-};
-
-
-// PUT /api/admin/users/:email - Update user role (e.g., promote to admin)
+// PUT /api/admin/users/:email - Update user role
 router.put('/users/:email', async (req, res) => {
   try {
     const { email } = req.params;
@@ -61,54 +52,6 @@ router.delete('/users/:email', async (req, res) => {
     res.json({ success: true, message: "User deleted successfully." });
   } catch (error) {
     console.error("Error deleting user:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-});
-
-// PUT /api/admin/lost_items/:id - Update a lost item
-router.put('/lost_items/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-    const db = await connectDB();
-    
-    const updateResult = await db.collection("lostItems").updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updates }
-    );
-
-    if (updateResult.matchedCount === 0) {
-      return res.status(404).json({ success: false, message: "Lost item not found." });
-    }
-
-    const updatedItem = await db.collection("lostItems").findOne({ _id: new ObjectId(id) });
-    res.json({ success: true, item: updatedItem });
-  } catch (error) {
-    console.error("Error updating lost item:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-});
-
-// PUT /api/admin/found_items/:id - Update a found item
-router.put('/found_items/:id', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const updates = req.body;
-    const db = await connectDB();
-    
-    const updateResult = await db.collection("foundItems").updateOne(
-      { _id: new ObjectId(id) },
-      { $set: updates }
-    );
-
-    if (updateResult.matchedCount === 0) {
-      return res.status(404).json({ success: false, message: "Found item not found." });
-    }
-
-    const updatedItem = await db.collection("foundItems").findOne({ _id: new ObjectId(id) });
-    res.json({ success: true, item: updatedItem });
-  } catch (error) {
-    console.error("Error updating found item:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 });

@@ -38,11 +38,8 @@ app.delete('/api/found_items/:id', foundItemsController.deleteFoundItem);
 app.use('/api/users', userController);
 
 // **Admin Routes** (CRUD for users and items)
-app.get('/api/admin/users', adminController.getAllUsers);
-app.put('/api/admin/users/:id', adminController.updateUserRole);
-app.delete('/api/admin/users/:id', adminController.deleteUser);
-app.put('/api/admin/lost_items/:id', adminController.updateLostItem);
-app.put('/api/admin/found_items/:id', adminController.updateFoundItem);
+const adminRoutes = require('./controllers/adminController');
+app.use('/api/admin', adminRoutes);
 
 // Start the server
 app.listen(PORT, () => {
