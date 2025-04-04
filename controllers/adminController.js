@@ -4,11 +4,12 @@ const { connectDB } = require('../lib/mongodb'); // Ensure this path is correct
 
 const router = express.Router();
 
-// GET /api/admin/users - Get all users
+// GET /api/admin/users - Retrieve all users
 router.get('/users', async (req, res) => {
   try {
     const db = await connectDB();
     const users = await db.collection("users").find().toArray();
+    console.log(Users);
     res.json({ success: true, users });
   } catch (error) {
     console.error("Error fetching users:", error);
