@@ -1,0 +1,81 @@
+const jwt = require('jsonwebtoken');
+const {connectDB} = require("../lib/mongodb");
+const {ObjectId} = require('mongodb');
+
+async function findItemByIdAndEmail(db, id, email) {
+    const collections = ['lost_items', 'found_items'];
+
+    for (const name of collections) {
+        const collection = db.collection(name);
+        const item = await collection.findOne({_id: new ObjectId(id), email});
+        if (item) return {item, collection};
+    }
+
+    return null;
+}
+
+exports.getItemFromToken = async (req, res) => {
+    const {token} = req.body;
+    if (!token) return res.status(400).json({success: false, message: "No token provided"});
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const db = await connectDB();
+
+        const result = await findItemByIdAndEmail(db, decoded.itemId, decoded.email);
+        if (!result) return res.status(404).json({success: false, message: "Item not found"});
+
+        res.json({success: true, item: result.item});
+    } catch (err) {
+        res.status(401).json({success: false, message: "Invalid or expired token"});
+    }
+};
+
+// PROLONG ITEM
+exports.prolongItem = async (req, res) => {
+    const {token} = req.body;
+    if (!token) return res.status(400).json({success: false, message: "No token provided"});
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const db = await connectDB();
+
+        const result = await findItemByIdAndEmail(db, decoded.itemId, decoded.email);
+        if (!result) return res.status(404).json({success: false, message: "Item not found"});
+
+        const newDate = new Date();
+        newDate.setDate(newDate.getDate() + 7);
+
+        const update = await result.collection.updateOne(
+            {_id: new ObjectId(decoded.itemId), email: decoded.email},
+            {$set: {next_notification: newDate}}
+        );
+
+        res.json({success: true, message: "Item prolonged by 1 week"});
+    } catch (err) {
+        res.status(401).json({success: false, message: "Invalid or expired token"});
+    }
+};
+
+// REMOVE ITEM
+exports.removeItem = async (req, res) => {
+    const {token} = req.body;
+    if (!token) return res.status(400).json({success: false, message: "No token provided"});
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const db = await connectDB();
+
+        const result = await findItemByIdAndEmail(db, decoded.itemId, decoded.email);
+        if (!result) return res.status(404).json({success: false, message: "Item not found"});
+
+        const update = await result.collection.updateOne(
+            {_id: new ObjectId(decoded.itemId), email: decoded.email},
+            {$set: {active: false}}
+        );
+
+        res.json({success: true, message: "Item successfully marked as inactive"});
+    } catch (err) {
+        res.status(401).json({success: false, message: "Invalid or expired token"});
+    }
+};

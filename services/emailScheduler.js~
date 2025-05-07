@@ -1,0 +1,7 @@
+const schedule = require('node-schedule');
+const checkAndSendReminders = require('./emailReminder');
+
+schedule.scheduleJob('0 8 * * *', async () => {
+    console.log('🔔 Running daily item reminder check at 12:00 AM');
+    await checkAndSendReminders();
+});

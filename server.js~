@@ -34,10 +34,6 @@ app.post('/api/report_found', foundItemsController.upload.single('image'), (req,
 app.get('/api/found_items', foundItemsController.getFoundItems);
 app.get('/api/found_items/:id', foundItemsController.getFoundItemById);
 
-app.post('/api/manage-item', manageItemRoutes.getItemFromToken);
-app.post('/api/manage-item/prolong', manageItemRoutes.prolongItem);
-app.post('/api/manage-item/remove', manageItemRoutes.removeItem);
-
 // User Routes
 app.use('/api/users', userController);
 
