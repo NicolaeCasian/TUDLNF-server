@@ -41,7 +41,7 @@ const addFoundItem = async (req, res) => {
     const next_notification = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
 
     const foundItem = {
-        type: 'Found', // or you could use the value from req.body if needed
+        type: 'Found',
         name,
         category,
         description,
@@ -50,7 +50,9 @@ const addFoundItem = async (req, res) => {
         email,
         image,
         createdAt,
-        next_notification
+        next_notification,
+        status: 'active',
+        userNotified: false,
     };
 
     try {

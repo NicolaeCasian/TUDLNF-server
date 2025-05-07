@@ -1,13 +1,13 @@
 const path = require('path');
 const multer = require('multer');
-const {connectDB} = require("../lib/mongodb");
+const { connectDB } = require("../lib/mongodb");
 const multerS3 = require("multer-s3");
-const {S3Client, GetObjectCommand} = require("@aws-sdk/client-s3");
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
 const dotenv = require("dotenv");
-const {getSignedUrl} = require("@aws-sdk/s3-request-presigner")
-const { ObjectId } = require('mongodb');
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const {ObjectId} = require("mongodb");
 
-dotenv.config({ path: './env.local' });
+dotenv.config();
 
 const s3 = new S3Client({
     region: process.env.AWS_REGION,
@@ -15,7 +15,7 @@ const s3 = new S3Client({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     },
-})
+});
 
 const upload = multer({
     storage: multerS3({
@@ -28,37 +28,37 @@ const upload = multer({
         },
         contentType: multerS3.AUTO_CONTENT_TYPE,
     }),
-    limits: {fileSize: 5 * 1024 * 1024},
-})
+    limits: { fileSize: 5 * 1024 * 1024 },
+});
 
-// Add lost item
-const addLostItem = async (req, res) => {
-    const {type,name, category, description, location, dateLost, email} = req.body;
+// Add found item
+const addFoundItem = async (req, res) => {
+    // Extract dateFound rather than dateLost for a found item
+    const { type, name, category, description, location, dateFound, email } = req.body;
     const image = req.file ? req.file.key : null;
 
     const createdAt = new Date();
     const next_notification = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    const lostItem = {
-        type:'Lost',
+    const foundItem = {
+        type: 'Found',
         name,
         category,
         description,
         location,
-        dateLost,
+        dateFound,
         email,
         image,
         createdAt,
         next_notification,
         status: 'active',
-        userNotified: false,
     };
 
     try {
         const db = await connectDB();
-        const collection = db.collection('lost_items');
+        const collection = db.collection('found_items');
 
-        const result = await collection.insertOne(lostItem);
+        const result = await collection.insertOne(foundItem);
         console.log('Data inserted successfully:', result);
 
         res.json({
@@ -70,11 +70,12 @@ const addLostItem = async (req, res) => {
                 category,
                 description,
                 location,
-                dateLost,
+                dateFound,
                 email,
             },
             image: image || "No Image",
             next_notification
+
         });
     } catch (error) {
         console.error('Error inserting document into MongoDB:', error);
@@ -85,32 +86,44 @@ const addLostItem = async (req, res) => {
     }
 };
 
-// Delete lost item using the native MongoDB driver
-exports.deleteLostItem = async (req, res) => {
-  const id = req.params.id;
-  try {
-    const db = await connectDB();
-    const collection = db.collection('lost_items');
-    // Delete the document based on its ObjectId
-    const result = await collection.findOneAndDelete({ _id: new ObjectId(id) });
-    if (result.value) {
-      res.status(200).json({ success: true, message: 'Item deleted successfully.' });
-    } else {
-      res.status(404).json({ success: false, message: 'Item not found.' });
+// Get found items
+const getFoundItems = async (req, res) => {
+    try {
+        const db = await connectDB();
+        const collection = db.collection("found_items");
+        const items = await collection.find().toArray();
+
+        for (let item of items) {
+            if (item.image) {
+                const command = new GetObjectCommand({
+                    Bucket: process.env.S3_BUCKET_NAME,
+                    Key: item.image,
+                });
+                item.image = await getSignedUrl(s3, command, { expiresIn: 3600 });
+            }
+        }
+
+        console.log("Fetched found items:", items);
+
+        res.json({
+            success: true,
+            items,
+        });
+    } catch (err) {
+        console.error("Error fetching found items:", err);
+        res.status(500).json({
+            success: false,
+            message: "Error fetching found items",
+        });
     }
-  } catch (error) {
-    console.error('Error deleting lost item:', error);
-    res.status(500).json({ success: false, message: 'Error deleting item.', error });
-  }
 };
 
-const getLostItemById = async (req, res) => {
+const getFoundItemById = async (req, res) => {
     try {
         const {id} = req.params;
         const db = await connectDB();
-        const collection = db.collection("lost_items");
+        const collection = db.collection("found_items");
 
-        // Fetch the item by ID
         const item = await collection.findOne({_id: new ObjectId(id)});
 
         if (!item) {
@@ -128,56 +141,24 @@ const getLostItemById = async (req, res) => {
             item.image = await getSignedUrl(s3, command, {expiresIn: 3600});
         }
 
-        console.log("Fetched lost item:", item);
+        console.log("Fetched found item:", item);
 
         res.json({
             success: true,
             item,
         });
     } catch (err) {
-        console.error("Error fetching lost item:", err);
+        console.error("Error fetching found item:", err);
         res.status(500).json({
             success: false,
-            message: 'Error fetching lost item',
-        });
-    }
-};
-
-
-const getLostItems = async (req, res) => {
-    try {
-        const db = await connectDB();
-        const collection = db.collection("lost_items");
-        const items = await collection.find().toArray();
-
-        for (let item of items) {
-            if (item.image) {
-                const command = new GetObjectCommand({
-                    Bucket: process.env.S3_BUCKET_NAME,
-                    Key: item.image,
-                });
-                item.image = await getSignedUrl(s3, command, {expiresIn: 3600})
-            }
-        }
-
-        console.log("Fetched lost items:", items);
-
-        res.json({
-            success: true,
-            items,
-        });
-    } catch (err) {
-        console.error("Error fetching lost items:", err)
-        res.status(500).json({
-            success: false,
-            message: "Error fetching lost items",
+            message: 'Error fetching v item',
         });
     }
 };
 
 module.exports = {
-    addLostItem,
-    getLostItemById,
+    addFoundItem,  // Corrected export: now exporting addFoundItem
     upload,
-    getLostItems
+    getFoundItemById,
+    getFoundItems, // Renamed for clarity
 };

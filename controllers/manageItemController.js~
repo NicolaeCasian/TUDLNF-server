@@ -76,11 +76,7 @@ exports.removeItem = async (req, res) => {
 
         const update = await result.collection.updateOne(
             {_id: new ObjectId(decoded.itemId), email: decoded.email},
-            {
-                $set: {
-                    status: 'removed'
-                }
-            }
+            {$set: {active: false}}
         );
 
         res.json({success: true, message: "Item successfully marked as inactive"});

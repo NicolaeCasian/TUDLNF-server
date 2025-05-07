@@ -1,6 +1,7 @@
 const {connectDB} = require("../lib/mongodb");
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
+const {ObjectId} = require('mongodb');
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -40,15 +41,35 @@ const checkAndSendReminders = async () => {
     const collections = ['lost_items', 'found_items'];
 
     const today = new Date();
+    const threeDaysAgo = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000);
 
     for (const collectionName of collections) {
         const collection = db.collection(collectionName);
 
         const itemsToNotify = await collection.find({
-            next_notification: { $exists: true }
+            next_notification: { $lte: today },
+            status: { $ne: 'removed' }
         }).toArray();
 
         for (const item of itemsToNotify) {
+
+            const {_id, next_notification, userNotified, email} = item;
+
+            if (userNotified && new Date(next_notification) < threeDaysAgo) {
+                await collection.updateOne(
+                    { _id: new ObjectId(_id) },
+                    {
+                        $set: {
+                            status: 'removed',
+                            userNotified: false
+                        }
+                    }
+                )
+            }
+
+            if (!userNotified) {
+
+            }
 
             const token = jwt.sign(
                 {
@@ -58,16 +79,13 @@ const checkAndSendReminders = async () => {
                 process.env.JWT_SECRET,
                 { expiresIn: "3d" }
             );
-            manageUrl = manageUrl + "?token=" + token;
 
+            manageUrl = manageUrl + "?token=" + token;
             await sendReminderEmail(item);
 
-            const nextNotification = new Date(today);
-            nextNotification.setDate(today.getDate() + 7);
-
             await collection.updateOne(
-                { _id: item._id },
-                { $set: { notificationDate: nextNotification } }
+                { _id: new ObjectId(_id) },
+                { $set: { userNotified: true } }
             );
         }
     }
