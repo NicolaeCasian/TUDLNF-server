@@ -148,7 +148,7 @@ const getLostItems = async (req, res) => {
     try {
         const db = await connectDB();
         const collection = db.collection("lost_items");
-        const items = await collection.find().toArray();
+        const items = await collection.find({ status: 'active' }).toArray();
 
         for (let item of items) {
             if (item.image) {

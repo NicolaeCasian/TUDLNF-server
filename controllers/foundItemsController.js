@@ -92,7 +92,7 @@ const getFoundItems = async (req, res) => {
     try {
         const db = await connectDB();
         const collection = db.collection("found_items");
-        const items = await collection.find().toArray();
+        const items = await collection.find({ status: 'active' }).toArray();
 
         for (let item of items) {
             if (item.image) {
