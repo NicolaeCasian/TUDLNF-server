@@ -12,16 +12,20 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const corsOptions = {
-    origin: [
-        'http://localhost:8100',  // Local development (Ionic frontend)
-        'https://tudlnf-serverv2-90ee51882713.herokuapp.com',  // Production URL for frontend
-    ],
-    methods: 'GET,POST,PUT,DELETE',
-    allowedHeaders: 'Content-Type',
-};
+// const corsOptions = {
+//     origin: [
+//         'http://localhost:8100',  // Local development (Ionic frontend)
+//         'https://tudlnf-serverv2-90ee51882713.herokuapp.com',  // Production URL for frontend
+//         'http://10.0.2.2:8100',
+//         'https://localhost:8100',
+//         'https://10.0.2.2:8100',
+//     ],
+//     methods: 'GET,POST,PUT,DELETE',
+//     allowedHeaders: 'Content-Type',
+//     // credentials: true,
+// };
 
-app.use(cors(corsOptions));
+app.use(cors());
 app.use(express.json());
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
@@ -37,6 +41,8 @@ app.get('/api/found_items/:id', foundItemsController.getFoundItemById);
 app.post('/api/manage-item', manageItemRoutes.getItemFromToken);
 app.post('/api/manage-item/prolong', manageItemRoutes.prolongItem);
 app.post('/api/manage-item/remove', manageItemRoutes.removeItem);
+
+app.get('/', (req,res) => res.send('Hello World!'));
 
 // User Routes
 app.use('/api/users', userController);

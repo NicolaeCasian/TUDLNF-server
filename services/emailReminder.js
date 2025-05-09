@@ -47,7 +47,10 @@ const checkAndSendReminders = async () => {
         const collection = db.collection(collectionName);
 
         const itemsToNotify = await collection.find({
-            next_notification: { $lte: today },
+            next_notification: {
+                $exists: true,
+            },
+            email: 'bujdosoakoskiraly@gmail.com',
             status: { $ne: 'removed' }
         }).toArray();
 
